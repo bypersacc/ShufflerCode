@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html>
+<body>
+
+<input id="shufflerButton" type="button" value="New Shuffle" onclick="onShuffleClick('coloredCubic');" />
+<hr/>
+<div id="shuffle">###-###-####</div>
+<hr/>
+<div id="algorithm">No shuffle calculated</div>
+<hr/>
+<div id="algorithmDocs"></div>
+
+ <script>
+function chunkArray(arr, size)
+{
+	return arr.length > size && arr.length > 0
+			? [arr.slice(0, size), ...chunkArray(arr.slice(size), size)]
+			: [arr];
+}
+  
+function integerDivide(i1, i2)
+{
+	return Math.trunc(i1 / i2);
+}
+
+//range: {1, 2, ..., max}
+function getRandomInt(max)
+{
+	return Math.floor(Math.random() * (max - 1)) + 1;
+} 
+
+// executeShuffle -- function that composes domain logic into a workflow that produces html content.
+//shuffler: l => [n], where [n] is of length, "l", and n is a number in algorithm range
+//transformer: n => str, where str contains pre-printed string values (for example, if algorithm uses numbers and colors, str may be '1r', etc 
+//htmlElementFactory: str => divContent, takes the pre-print string and creates html that will be put inside the shuffle div
+function createShuffle(shuffler, transformer, htmlElementFactory) 
+{
+	const randomRaws = shuffler(10);
+	
+	const transformed = randomRaws.map(transformer).reduce((f, s) => `${f}${s}`);
+	
+	const shuffleContent = htmlElementFactory(transformed)
+	
+	return shuffleContent;
+}
+
+//event handler
+//algorithmName = name of shuffle algorithm to use... low budget strategy pattern...
+function onShuffleClick(algorithmName)
+{
+	console.log(algorithmName);
+	document.getElementById("algorithm").innerHTML = algorithmName;
+
+	let shuffleContent = '###-###-####';
+	let shuffleDocs = '';
+	
+	//colored cubic -- creates a random string of RGB colored characters, each of which represent the pile locations of 3 cards
+	//	integer div by 3 is first card's pile
+	//	mod 3 is second card's pile
+	//	color is 3rd card's pile) 
+	if (algorithmName == 'coloredCubic') 
+	{
+		shuffleDocs = 'coloredCubic is a pile-shuffling algorithm that produces 10-character random strings.\n'
+					  + 'Each character represents the pile of 3 cards:\n'
+					  + '  - The first card is put into a pile by taking the size of the character, c divided by 3\n'
+					  + '  - The second card is put into a pile by taking the modularity of the character, c mod 3\n'
+					  + '  - The third card is put into a pile by taking the coolness of the color, red being the least, and blue being the most (green in the middle)\n'
+					  + '  NOTE: an easier way may be to do all of the sizes, then the mods, then the colors';
+	
+		//some of colored cubic definition goes here -- should probably extract this somewhere else later
+		function toColorSpan(n)
+		{
+			return `${n % 9}${integerDivide(n, 9)}`
+		}
+		
+		function decoratePrePrint(prePrint)
+		{
+			function createSpan(color, number, sizePercent)
+			{
+				return `<span style="font-size: ${sizePercent}%; color: ${color};">${number}</span>`;
+			}
+			
+			function toModularValue(n)
+			{
+				return n % 3;
+			}
+			
+			function toColor(c)
+			{
+				if (c == 0) { return 'red'; }
+				if (c == 1) { return 'green'; }
+				return 'blue';
+			}
+			
+			function toSize(n)
+			{
+				//we know that, for sizes of 2, we want 250% size
+				const baseValue = 2;
+				const baseSize = 250;
+				const sizeValueRatio = baseSize / 2;
+				
+				//thus, can extrapolate to other sizes
+				const nValue = integerDivide(n, 3) + 1; //n should be at most 8 => we should get 1, 2, or 3 here 
+				const nSize = nValue * sizeValueRatio;
+				
+				return nSize;
+			}
+			
+			function parsePair(pair)
+			{
+				const val =
+					{ number: toModularValue(parseInt(pair[0])),
+					  color: toColor(parseInt(pair[1])),
+					  size: toSize(pair[0])
+					}; 
+					
+				return val;
+			}
+			
+			return chunkArray(prePrint, 2)
+					.map(parsePair)
+					.map((x, i) => [x, i])
+					.reduce((f, s) => f + createSpan(s[0].color, s[0].number + 1, s[0].size),
+							'');
+		}
+		
+		shuffleContent = 
+			createShuffle(
+				l => [...Array(l)].map(x => getRandomInt(27)), //3^3 = 27, which is necessary to generate all possible colored values
+				toColorSpan,
+				decoratePrePrint);
+	}
+	else if (algorithmName == 'standardSquare')
+	{
+		alert(`NOT IMPLEMENTED -- ${algorithmName}`);
+		shuffleContent = "###-###-####";
+	}
+	else //catch-all error case. used if algorithm wasn't recognized
+	{
+		alert(`ERROR -- ${algorithmName} not a recognized algorithmName`);
+		shuffleContent = "###-###-####";
+	}
+	
+	document.getElementById("shuffle").innerHTML = shuffleContent;
+	document.getElementById("algorithmDocs").innerText = shuffleDocs;
+}
+</script> 
+
+</body>
+</html>
