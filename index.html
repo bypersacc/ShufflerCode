@@ -4,14 +4,13 @@
 
 <div id="buttonsParent">
 	<div id="Shuffles lable" style="float: left; padding-right: 20px; padding-left: 20px;">Shuffles: </div>
-	
 	<input id="cubicShuffleButton" style="float: left; padding-right: 20px; padding-left: 20px;" type="button" value="Cubic" onclick="onShuffleClick('coloredCubic');"/>
 	<input id="quarticShuffleButton" style="float: left; padding-right: 20px; padding-left: 20px;" type="button" value="Quartic" onclick="onShuffleClick('2dQuartic');"/>
 </div>
 <br/>
 
 <hr/>
-<div id="shuffle"><span style="font-size: 1000%;">###-###-####</span></div>
+<div id="shuffle"><span style="font-size: 750%;">##########</span></div>
 <hr/>
 <div id="algorithm">No shuffle calculated</div>
 <hr/>
@@ -64,11 +63,16 @@ function getUnicodeWithOffset(startUnicodeCharacter, offset)
     return reParse;
 }
 
-//range: {1, 2, ..., max}
-function getRandomInt(max)
-{
-	return Math.floor(Math.random() * (max - 1)) + 1;
-} 
+function getCryptoStrongRandomInt(max) {
+    const randomBuffer = new Uint32Array(1);
+
+    window.crypto.getRandomValues(randomBuffer);
+
+    const randomNumber = randomBuffer[0] / (0xffffffff + 1);
+    const result = Math.floor(randomNumber * max) + 1;
+	
+	return result;
+}
 
 //this generates div-mod decompositions of an "exponent complete" number (2^2, 3^3, 4^4, etc...)
 //decomposition algorithm example (for 4^4)
@@ -106,7 +110,6 @@ function onShuffleClick(algorithmName)
 	let shuffleContent = '###-###-####';
 	let shuffleDocs = '';
 	
-	
 	//criteria:
 	//	4 sizes
 	//	4 symbols (assuming alphanumeric order -- abcde, 12345, etc)
@@ -140,9 +143,10 @@ function onShuffleClick(algorithmName)
 			}
 			
 			//color function -- this happens in span styling, so outputs something readable as a style
+			//fourth color: '#87cefa' creates the most distinct set, but #000000 may be more intuitive to sort by
 			function toColor(n)
 			{
-				const colorSet = ['#ff0000', '#00ff00', '#0000ff', '#87cefa'];
+				const colorSet = ['#ff0000', '#00ff00', '#0000ff', '#000000'];
 				return colorSet[n];
 			}
 			
@@ -182,7 +186,7 @@ function onShuffleClick(algorithmName)
 		
 		shuffleContent = 
 			createShuffle(
-				l => [...Array(l)].map(x => getRandomInt(4 ** 4)),
+				l => [...Array(l)].map(x => getCryptoStrongRandomInt(4 ** 4)),
 				compose(stringify, rng => decompose(rng, 4)),
 				decoratePrePrint);
 		
@@ -194,12 +198,11 @@ function onShuffleClick(algorithmName)
 	else if (algorithmName == 'coloredCubic') 
 	{
 		//some of colored cubic definition goes here -- should probably extract this somewhere else later
-	
 		shuffleDocs = 'coloredCubic is a pile-shuffling algorit.hm that produces 10-character random strings.\n'
-					  + 'Each character represents the pile of 3 cards:\n'
-					  + '  - The first card is put into a pile by taking the size of the character, c divided by 3\n'
-					  + '  - The second card is put into a pile by taking the modularity of the character, c mod 3\n'
-					  + '  - The third card is put into a pile by taking the coolness of the color, red being the least, and blue being the most (green in the middle)\n'
+					  + 'Each character represents the pile of 3 cards (may choose any order):\n'
+					  + '  - One card is put into a pile by taking the size of the character {small, medium, large} \n'
+					  + '  - The second card is put into a pile by taking the value of the number {1, 2, 3}\n'
+					  + '  - The third card is put into a pile by taking the coolness of the color {red, green, blue}\n'
 					  + '  NOTE: an easier way may be to do all of the sizes, then the mods, then the colors\n'
 					  + '  POSTSHUFFLE: roll 3 piles * 2 choices = 3! = d6, mod 3, mod 2';
 	
@@ -263,7 +266,7 @@ function onShuffleClick(algorithmName)
 		
 		shuffleContent = 
 			createShuffle(
-				l => [...Array(l)].map(x => getRandomInt(27)), //3^3 = 27, which is necessary to generate all possible colored values
+				l => [...Array(l)].map(x => getCryptoStrongRandomInt(3**3)), //3^3 = 27, which is necessary to generate all possible colored values
 				toColorSpan,
 				decoratePrePrint);
 	}
