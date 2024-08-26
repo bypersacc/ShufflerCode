@@ -2,11 +2,14 @@
 <html>
 <body>
 
-<select name="algorithms" id="algorithms">
-	<option value="coloredCubic">coloredCubic</option>
-	<option value="2dQuartic">2dQuartic</option>
-</select>
-<input id="shufflerButton" type="button" value="New Shuffle" onclick="onShuffleClick();" />
+<div id="buttonsParent">
+	<div id="Shuffles lable" style="float: left; padding-right: 20px; padding-left: 20px;">Shuffles: </div>
+	
+	<input id="cubicShuffleButton" style="float: left; padding-right: 20px; padding-left: 20px;" type="button" value="Cubic" onclick="onShuffleClick('coloredCubic');"/>
+	<input id="quarticShuffleButton" style="float: left; padding-right: 20px; padding-left: 20px;" type="button" value="Quartic" onclick="onShuffleClick('2dQuartic');"/>
+</div>
+<br/>
+
 <hr/>
 <div id="shuffle">###-###-####</div>
 <hr/>
@@ -69,10 +72,10 @@ function getRandomInt(max)
 
 //this generates div-mod decompositions of an "exponent complete" number (2^2, 3^3, 4^4, etc...)
 //decomposition algorithm example (for 4^4)
-//mod 4^4, then div 4^3 = size
+//mod 4^4, then div 4^3 = size (NOTE: this has the effect of just doing the division)
 //mod 4^3, then div 4^2 = color
 //mod 4^2, then div 4^1 = alphabet system
-//mod 4^1, then div 4^0 = symbols (mod)
+//mod 4^1, then div 4^0 = symbols (mod) (NOTE: this has the effect of just doing the mod)
 //TODO: this implies all decomposed numbers are uniform! Simulate this to test it out (compared to fully composed nubmers)
 function decompose(rng, n)
 {
@@ -96,13 +99,8 @@ function createShuffle(shuffler, transformer, htmlElementFactory)
 
 //event handler
 //algorithmName = name of shuffle algorithm to use... low budget strategy pattern...
-function onShuffleClick()
+function onShuffleClick(algorithmName)
 {
-	var e = document.getElementById("algorithms");
-	var value = e.value;
-	
-	const algorithmName = document.getElementById("algorithms").value;
-	console.log(algorithmName);
 	document.getElementById("algorithm").innerHTML = algorithmName;
 
 	let shuffleContent = '###-###-####';
@@ -144,7 +142,7 @@ function onShuffleClick()
 			//color function -- this happens in span styling, so outputs something readable as a style
 			function toColor(n)
 			{
-				const colorSet = ['#008080', '#ffa500', '#00ff00', '#0000ff', '#ff1493'];
+				const colorSet = ['#ff0000', '#00ff00', '#0000ff', '#87cefa'];
 				return colorSet[n];
 			}
 			
@@ -234,9 +232,9 @@ function onShuffleClick()
 			function toSize(n)
 			{
 				//we know that, for sizes of 2, we want 250% size
-				const baseValue = 2;
-				const baseSize = 250;
-				const sizeValueRatio = baseSize / 2;
+				const maxSize = 1000;
+				const maxValue = 3;
+				const sizeValueRatio = maxSize / maxValue;
 				
 				//thus, can extrapolate to other sizes
 				const nValue = integerDivide(parseInt(n), 3) + 1; //n should be at most 8 => we should get 1, 2, or 3 here 
