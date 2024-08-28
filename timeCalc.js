@@ -20,7 +20,7 @@ function onCalculateTimeClick()
 	//Calculate -- take two dates, take difference in hours, then subtract break length
 	const startDate = toJSDate(startTime);
 	const endDate = toJSDate(endTime);
-	const breakDurationHours = parseInt(breakDuration) / 60;
+	const breakDurationHours = breakDuration;
 
 	const differenceMilliseconds = endDate.getTime() - startDate.getTime();
 	const differenceMinutes = Math.floor(differenceMilliseconds / 60000); //Math.floor called to eliminate floating-point imprecision from integer value
