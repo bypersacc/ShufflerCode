@@ -25,6 +25,11 @@ function windowArray(inputArray, size)
     }, []);
 }
 
+function append(arr, x)
+{
+	return arr.concat([x]);
+}
+
 function compose(...functions)
 {
 	return (input) =>
@@ -41,13 +46,28 @@ function getUnicodeWithOffset(startUnicodeCharacter, offset)
     return reParse;
 }
 
-function getCryptoStrongRandomInt(max) {
+//range: [1, max]
+function getCryptoStrongRandomInt(max)
+{
     const randomBuffer = new Uint32Array(1);
 
     window.crypto.getRandomValues(randomBuffer);
 
     const randomNumber = randomBuffer[0] / (0xffffffff + 1);
     const result = Math.floor(randomNumber * max) + 1;
+	
+	return result;
+}
+
+//range: [min, max]
+function getCryptoStrongRandomIntRange(min, max)
+{
+    const randomBuffer = new Uint32Array(1);
+
+    window.crypto.getRandomValues(randomBuffer);
+
+    const randomNumber = randomBuffer[0] / (0xffffffff + min);
+    const result = Math.floor(randomNumber * max) + min;
 	
 	return result;
 }
@@ -255,6 +275,188 @@ function onShuffleClick(algorithmName)
 	}
 	
 	document.getElementById("shuffle").innerHTML = shuffleContent;
+	document.getElementById("algorithmDocs").innerText = shuffleDocs;
+}
+
+
+function onFunPrepClick(algorithmName)
+{
+	document.getElementById("algorithm").innerHTML = algorithmName;
+	
+	let shuffleContent = '###-###-####';
+	let shuffleDocs = '';
+	
+	let shuffle = [];
+	
+	if (algorithmName == 'fun8')
+	{
+		shuffleDocs = 'fun8 seeks to eliminate bad shuffle possibilities by observing a few facts:\n'
+					  + 'shuffle quality is more sensitive in general to early cards than later cards (imagine drawing no land/only land for the first 5 turns)\n'
+					  + 'bad shuffles (too much or too little land) creates uninteractive gameplay (AKA boring)\n'
+					  + 'land sufficiency is generally of paramount importance until a certain point, then its value drops significantly (imagine not being able to get enough land for your commander/medium-value cards)\n'
+					  + 'thus, fun8 seeks to ensure some minimal constraints are met in terms of land-amount (not too much or too little), while maximizing randomness where possible\n'
+					  + 'the specific constraints are as follows:\n'
+					  + '1) the top 8 cards, as a whole, should contain 3 lands (making a discard-heavy early game unlikely, while not overly-accelerating power)\n'
+					  + 'NOTE: this algorithm only guarantees 3 land, so bad early shuffles are still possible (although the shuffle is much more natural-seeming) -- use fun13 to eliminate this possibility as well. \n'
+					  + 'INSTRUCTIONS:\n'
+					  + '1): split land/nonland (can also add land-giving sorcery, at your own risk) into two separate piles. Shuffle these two decks, as desired.\n'
+					  + '2): use the shuffle generated above to generate the shuffle for the first 8 cards. N = take the top card of the nonland-deck, L = take the top card of the land deck. These should go into one pile -- these will be your first 8 cards\n'
+					  + '3): combine the remaining land/nonland decks, then shuffle them as desired'
+					  + '4): put the big shuffled deck BEHIND the first 8 shuffled cards, such that the cards from the big deck will only be drawn AFTER the ones from the first 8'
+					  + '5): play the game as normal';
+					  
+		//top 8 is 1-3
+		const top8Randoms = 3;
+		
+		//for 3:
+		//8*7*6 = 336 (top 3 numbers of 8!, for 3 positions in 8 locations)
+		//if result = 336, 336 mod 8 = 0, mod 7 = 0, mod 6 = 0, so we put each land in the first spots
+		//if result = 1, 0 mod 8 = 8, mod 7 = 7, mod 6 = 6, so we'd put it in the last spot each time
+		
+		//we have how many of the top 8 should be land -- now, we need to actually generate a shuffle from that
+		//generate shuffle of positions of the land cards (via familiar decomp rand process)
+		//then, create array with 8 chars, each init'd to 'N'. each decomposed land location replaces with 'L'
+		
+		//adjustment = 8!/x => adjustment = 8! / (8^n * (8-n)!)
+		function factorial(n)
+		{
+			let result = 1;
+			
+			for (let i = n; i > 1; i--) { result *= i; }
+			
+			return result;
+		}
+		
+		const lowerFactorial = factorial(8 - top8Randoms);
+		const adjustment = factorial(8) / (8**top8Randoms * lowerFactorial);
+		const adjusted = 8**top8Randoms * adjustment;
+		const top8LandPositionShuffle = getCryptoStrongRandomInt(adjusted);
+		
+		const top8LandPositions = 
+			[...Array(top8Randoms)].map((x, i) => top8LandPositionShuffle % (8-i));
+		
+		//good luck reading this in the future...
+		//this takes the mod indices and converts them into absolute indices, ready to be placed into an 8-length array
+		const top8LandAbsoluteIndices =
+			top8LandPositions
+				.reduce(
+					(info, nextIndex) =>
+						append(
+							info,
+							[...Array(8).keys()]
+								.filter(x => !info.includes(x)) //filter down ones that don't match previously found
+								.map((pair, j) => [pair, j]) //track indices in new range
+								.find(x => x[1] == nextIndex) //an index is said to be a match if it matches the indices in the new range
+								[0]), //choose the 0th index because that is where the absolute index is contained
+					[]);
+		
+		//this breaks down shuffle into false (nonlands) and true (lands)
+		const top8Shuffle =
+			[...Array(8).keys()].map(i => top8LandAbsoluteIndices.includes(i) ? true : false);
+			
+		shuffle = top8Shuffle;
+	}
+	else if (algorithmName = 'fun13')
+	{
+		shuffleDocs = 'UNDER CONSTRUCTION -- DO NOT USE\n';
+					  
+		//top 8 is 1-3
+		const top8Randoms = getCryptoStrongRandomInt(3);
+		
+		console.log(`top8Randoms = ${top8Randoms}`);
+		//for 3:
+		//8*7*6 = 336 (top 3 numbers of 8!, for 3 positions in 8 locations)
+		//if result = 336, 336 mod 8 = 0, mod 7 = 0, mod 6 = 0, so we put each land in the first spots
+		//if result = 1, 0 mod 8 = 8, mod 7 = 7, mod 6 = 6, so we'd put it in the last spot each time
+		
+		//we have how many of the top 8 should be land -- now, we need to actually generate a shuffle from that
+		//generate shuffle of positions of the land cards (via familiar decomp rand process)
+		//then, create array with 8 chars, each init'd to 'N'. each decomposed land location replaces with 'L'
+		
+		//adjustment = 8!/x => adjustment = 8! / (8^n * (8-n)!)
+		function factorial(n)
+		{
+			let result = 1;
+			
+			for (let i = n; i > 1; i--) { result *= i; }
+			
+			return result;
+		}
+		
+		
+		const lowerFactorial = factorial(8 - top8Randoms);
+		const adjustment = factorial(8) / (8**top8Randoms * lowerFactorial);
+		const adjusted = 8**top8Randoms * adjustment;
+		const top8LandPositionShuffle = getCryptoStrongRandomInt(adjusted);
+		
+		console.log(`top8LandPositionShuffle = ${top8LandPositionShuffle}`);
+		
+		const top8LandPositions = 
+			[...Array(top8Randoms)].map((x, i) => top8LandPositionShuffle % (8-i));
+		
+		console.log(`top8LandPositions = ${top8LandPositions}`);
+		
+		//good luck reading this in the future...
+		//this takes the mod indices and converts them into absolute indices, ready to be placed into an 8-length array
+		const top8LandAbsoluteIndices =
+			top8LandPositions
+				.reduce(
+					(info, nextIndex) =>
+						append(
+							info,
+							[...Array(8).keys()]
+								.filter(x => !info.includes(x)) //filter down ones that don't match previously found
+								.map((pair, j) => [pair, j]) //track indices in new range
+								.find(x => x[1] == nextIndex) //an index is said to be a match if it matches the indices in the new range
+								[0]), //choose the 0th index because that is where the absolute index is contained
+					[]);
+		
+		console.log(`top8LandAbsoluteIndices = ${top8LandAbsoluteIndices}`);
+		
+		//this breaks down shuffle into false (nonlands) and true (lands)
+		const top8Shuffle =
+			[...Array(8).keys()].map(i => top8LandAbsoluteIndices.includes(i) ? true : false);
+			
+		console.log(`top8Shuffle = ${top8Shuffle}`);
+		
+		let nextTwo = [undefined, undefined];
+		
+		if (top8Randoms == 1) { nextTwo = [true, true]; } //if there was only 1 land in the top 8, we'd need 9 and 10 to both be land to preserve shuffle quality
+		else if (top8Randoms == 3) { nextTwo = [false, false]; } //if there were 3 lands in the top 8, we have enough for a full 10, so just do nonland for the rest
+		else if (top8Randoms == 2)
+		{
+			const pos = getCryptoStrongRandomInt(2);
+			
+			nextTwo = [false, false].map((x, i) => pos == i + 1 ? true : x);
+		} //here, we want exactly 1 more land. However, its position should be random
+		
+		const top10Shuffle = top8Shuffle.concat(nextTwo);
+		
+		console.log(`top10Shuffle = ${top10Shuffle}`);
+		
+		//potential top 9/10 is another 1-2
+		shuffle = top10Shuffle;
+	}
+	else //catch-all error case. used if algorithm wasn't recognized
+	{
+		alert(`ERROR -- ${algorithmName} not a recognized algorithmName`);
+		shuffleContent = "###-###-####";
+	}
+	
+	//create an html element that will be how the land/nonland status is displayed
+	function decorateShuffle(isLand)
+	{
+		const color = isLand ? '#00ff00' : '#000000';
+		const displayChar = isLand ? 'L' : 'N';
+		
+		const span = '<span ' + `style="font-size: ${750}%; color: ${color};">${displayChar}` + '</span>';
+				
+		return span;
+	}
+	
+	const shuffleSpans = shuffle.map(decorateShuffle).reduce((f, s) => f + s);
+	
+	document.getElementById("shuffle").innerHTML = shuffleSpans;
 	document.getElementById("algorithmDocs").innerText = shuffleDocs;
 }
 
