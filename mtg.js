@@ -454,7 +454,15 @@ function onFunPrepClick(algorithmName)
 		return span;
 	}
 	
-	const shuffleSpans = shuffle.map(decorateShuffle).reduce((f, s) => f + s);
+	function decorateShuffleWithImage(isLand)
+	{
+		const landImg = '<img src="Resources/tomify.png" width="200" height="200" border="2px solid #000000">';
+		const nonlandImg = '<img src="Resources/kitty.png" width="200" height="200" border="2px solid #000000">';
+		
+		return isLand ? landImg : nonlandImg;
+	}
+	
+	const shuffleSpans = shuffle.map(decorateShuffleWithImage).reduce((f, s) => f + s);
 	
 	document.getElementById("shuffle").innerHTML = shuffleSpans;
 	document.getElementById("algorithmDocs").innerText = shuffleDocs;
