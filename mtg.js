@@ -302,7 +302,7 @@ function onFunPrepClick(algorithmName)
 					  + '1): split land/nonland (can also add land-giving sorcery, at your own risk) into two separate piles. Shuffle these two decks, as desired.\n'
 					  + '2): use the shuffle generated above to generate the shuffle for the first 8 cards. N = take the top card of the nonland-deck, L = take the top card of the land deck. These should go into one pile -- these will be your first 8 cards\n'
 					  + '3): combine the remaining land/nonland decks, then shuffle them as desired'
-					  + '4): put the big shuffled deck BEHIND the first 8 shuffled cards, such that the cards from the big deck will only be drawn AFTER the ones from the first 8'
+					  + '4): put the big shuffled deck BEHIND the first 8 shuffled cards, such that the cards from the big deck will only be drawn AFTER the ones from the first 8\n'
 					  + '5): play the game as normal';
 					  
 		//top 8 is 1-3
